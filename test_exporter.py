@@ -100,6 +100,43 @@ class MetricsStoreTest(unittest.TestCase):
         )
         self.assertEqual(store.dnsbl_hits_total, 0)
 
+    def test_drops_connections_that_never_get_an_end_line(self):
+        # With postscreen_greet_action=ignore, a PREGREET client is handed to
+        # smtpd without any further postscreen line.
+        store = MetricsStore()
+
+        def postscreen(time, message):
+            store.apply_line(f"{time} mail postfix/postscreen[1]: {message}", "mail_log")
+
+        postscreen("Jul 15 10:00:00", "CONNECT from [192.0.2.3]:1000 to [192.0.2.10]:25")
+        postscreen("Jul 15 10:00:00", "PREGREET 11 after 0.1 from [192.0.2.3]:1000: EHLO x")
+        postscreen("Jul 15 10:15:00", "CONNECT from [198.51.100.1]:2000 to [192.0.2.10]:25")
+
+        self.assertEqual(store.active_connections, 2)
+
+        postscreen("Jul 15 10:15:01", "DNSBL rank 1 for [198.51.100.1]:2000")
+
+        self.assertEqual(store.active_connections, 1)
+
+        postscreen("Jul 15 10:15:02", "DISCONNECT [198.51.100.1]:2000")
+        # A late end line for a dropped connection changes nothing.
+        postscreen("Jul 15 10:15:03", "DISCONNECT [192.0.2.3]:1000")
+
+        self.assertEqual(store.active_connections, 0)
+
+    def test_drops_old_connections_across_log_time_formats_and_new_year(self):
+        for first, later in (
+            ("2026-07-15T10:00:00.123456+02:00", "2026-07-15T10:20:00.000000+02:00"),
+            ("Dec 31 23:00:00", "Jan  1 00:00:00"),
+            ("Feb 29 10:00:00", "Mar  1 10:00:00"),
+        ):
+            with self.subTest(first=first):
+                store = MetricsStore()
+                store.apply_line(f"{first} mail postfix/postscreen[1]: CONNECT from [192.0.2.3]:1000 to [192.0.2.10]:25", "mail_log")
+                store.apply_line(f"{later} mail postfix/postscreen[1]: CONNECT from [198.51.100.1]:2000 to [192.0.2.10]:25", "mail_log")
+
+                self.assertEqual(store.active_connections, 1)
+
     def test_parses_fail2ban_bans_and_rejections(self):
         store = MetricsStore()
 

@@ -12,6 +12,7 @@ import signal
 import sys
 import threading
 import time
+from datetime import datetime, timedelta
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 HOST = os.environ.get("EXPORTER_HOST", "0.0.0.0")
@@ -46,12 +47,27 @@ FAIL2BAN_ACTION = re.compile(
 )
 FAIL2BAN_START = re.compile(r"fail2ban\.server\s*\[\d+\]:\s+info\s+starting fail2ban")
 
+# Postscreen does not log an end for every connection: with
+# postscreen_greet_action=ignore, for one, a PREGREET client is handed to smtpd
+# silently. A connection still open after this much log time is considered over.
+CONNECTION_MAX_AGE = timedelta(minutes=15)
+
+
+def log_time(line):
+    """Return the timestamp that starts a Postfix log line, or None."""
+    try:
+        if line[:4].isdigit():  # 2026-11-26T06:41:31...
+            return datetime.strptime(line[:19], "%Y-%m-%dT%H:%M:%S")
+        # "Nov 26 06:41:31" has no year; a leap year accepts Feb 29.
+        return datetime.strptime("2000 " + line[:15], "%Y %b %d %H:%M:%S")
+    except ValueError:
+        return None
+
 
 class MetricsStore:
     def __init__(self):
         self.connections_total = {"connected": 0, "passed": 0, "blocked": 0, "whitelisted": 0, "rejected": 0, "pregreet": 0}
         self.dnsbl_hits_total = 0
-        self.active_connections = 0
         self.fail2ban_bans_total = 0
         self.fail2ban_rejections_total = 0
         self.postfix_sasl_auth_failures_total = 0
@@ -60,7 +76,7 @@ class MetricsStore:
         self.dovecot_login_failures_total = 0
         self.dovecot_active_sessions = 0
         self.dovecot_lmtp_deliveries_total = 0
-        self._active_hosts = set()
+        self._connections = {}  # "[ip]:port" -> connect time, oldest first
         self._active_dovecot_sessions = set()
         self._active_bans = set()  # (jail, ip)
 
@@ -89,15 +105,22 @@ class MetricsStore:
 
         self._apply_postfix(line, lowered)
 
+    @property
+    def active_connections(self):
+        return len(self._connections)
+
     def _release_connection(self, line):
-        key = self._connection_key(line)
-        if key is not None and key not in self._active_hosts:
-            # Already released by an earlier outcome line for this connection
-            # (e.g. postscreen logs both a rejection reason and DISCONNECT).
-            return False
-        self._active_hosts.discard(key)
-        self.active_connections = max(0, self.active_connections - 1)
-        return True
+        # A no-op if already released: postscreen can log both an outcome and
+        # DISCONNECT for the same connection.
+        self._connections.pop(self._connection_key(line), None)
+
+    def _expire_connections(self, now):
+        while self._connections:
+            key, started = next(iter(self._connections.items()))
+            # abs(): a jump backwards, such as a new year, also ends them.
+            if started is None or abs(now - started) <= CONNECTION_MAX_AGE:
+                return
+            del self._connections[key]
 
     @staticmethod
     def _connection_key(line):
@@ -106,14 +129,18 @@ class MetricsStore:
 
     def _apply_postscreen(self, line, message):
         """Count one postscreen line; `message` is its lowercased text after the tag."""
+        now = log_time(line)
+        if now is not None:
+            self._expire_connections(now)
+
         if message.startswith("noqueue: reject:"):
             self.connections_total["rejected"] += 1
         elif message.startswith("connect from "):
             key = self._connection_key(line)
-            self.active_connections += 1
             self.connections_total["connected"] += 1
             if key is not None:
-                self._active_hosts.add(key)
+                self._connections.pop(key, None)  # keep oldest-first order
+                self._connections[key] = now
         elif message.startswith("pass "):
             self._release_connection(line)
             self.connections_total["passed"] += 1

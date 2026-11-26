@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.5] - 2026-11-26
+
+- Fixed `postfix_postscreen_active_connections` growing without limit.
+  Postscreen does not log an end for every connection, for example when a
+  `PREGREET` client is handed on because `postscreen_greet_action` is
+  `ignore`. A connection with no end line is now dropped after 15 minutes of
+  log time.
+
 ## [1.0.4] - 2026-11-26
 
 - Fixed Dovecot login failures including connections that never tried to

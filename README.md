@@ -73,7 +73,7 @@ Metrics are served on `/metrics` (default port `9101`).
 |---|---|---|
 | `postfix_postscreen_connections_total{result}` | counter | Postscreen events by result: `connected`, `passed`, `blocked`, `whitelisted`, `rejected`, `pregreet` |
 | `postfix_postscreen_dnsbl_hits_total` | counter | Postscreen DNSBL hits |
-| `postfix_postscreen_active_connections` | gauge | Active Postscreen connections |
+| `postfix_postscreen_active_connections` | gauge | Connections postscreen has not finished with; one with no end line is dropped after 15 minutes of log time |
 | `postfix_sasl_auth_failures_total` | counter | SASL authentication failures |
 | `postfix_deliveries_total{status}` | counter | Delivery attempts by status: `sent`, `deferred`, `bounced` |
 | `ulaknode_dovecot_logins_total` | counter | Successful Dovecot logins |
@@ -145,7 +145,7 @@ docker compose up -d --build
 
 The image is tagged `ghcr.io/itefix/ulaknode-exporter:dev` by default. Set
 `EXPORTER_VERSION` to build a release, e.g.
-`EXPORTER_VERSION=1.0.4 docker compose build`.
+`EXPORTER_VERSION=1.0.5 docker compose build`.
 
 Run the tests:
 
@@ -167,8 +167,8 @@ python3 -m unittest -v test_exporter
 
 [GitHub Actions](.github/workflows/docker.yml) runs the tests and builds the
 image (`linux/amd64` and `linux/arm64`) for pull requests and pushes to
-`main`. Pushing a version tag such as `v1.0.4` publishes the image to
-`ghcr.io/itefix/ulaknode-exporter` with the tags `1.0.4`, `1.0` and `latest`.
+`main`. Pushing a version tag such as `v1.0.5` publishes the image to
+`ghcr.io/itefix/ulaknode-exporter` with the tags `1.0.5`, `1.0` and `latest`.
 The latest release is also rebuilt monthly to pick up base image updates.
 
 ## Links

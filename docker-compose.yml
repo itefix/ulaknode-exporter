@@ -1,0 +1,30 @@
+# Builds the exporter from this source tree and runs it next to ulaknode.
+# To run the published image instead, see the Quick start in README.md.
+services:
+  exporter:
+    build:
+      context: .
+      args:
+        VERSION: ${EXPORTER_VERSION:-dev}
+    # Tag given to the locally built image.
+    image: ghcr.io/itefix/ulaknode-exporter:${EXPORTER_VERSION:-dev}
+    container_name: ulaknode-exporter
+    restart: unless-stopped
+    volumes:
+      # Read-only: the exporter only reads from these volumes, never writes.
+      - ulak_logs:/var/log:ro
+      - ulak_mail:/var/mail:ro
+    ports:
+      - "9101:9101"
+    environment:
+      - EXPORTER_HOST=0.0.0.0
+      - EXPORTER_PORT=9101
+
+volumes:
+  # Must already exist — created by the main ulaknode container on first run.
+  # If ulaknode was deployed with Compose, the volume names carry its project
+  # prefix (e.g. ulaknode_ulak_logs); adjust the names here and above to match.
+  ulak_logs:
+    external: true
+  ulak_mail:
+    external: true

@@ -1,0 +1,431 @@
+{
+  "title": "ulaknode Overview",
+  "schemaVersion": 38,
+  "version": 6,
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Overview",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Active Postscreen Connections",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 1 },
+      "targets": [
+        { "expr": "postfix_postscreen_active_connections", "legendFormat": "active" }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Active Dovecot Sessions",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 1 },
+      "targets": [
+        { "expr": "ulaknode_dovecot_active_sessions", "legendFormat": "active" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Active Fail2ban Bans",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 1 },
+      "targets": [
+        { "expr": "ulaknode_fail2ban_active_bans", "legendFormat": "banned" }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Load (1m)",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 1 },
+      "targets": [
+        { "expr": "ulaknode_node_load1", "legendFormat": "load1" }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Memory Available",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "min": 0 } },
+      "targets": [
+        {
+          "expr": "100 * ulaknode_node_memory_available_bytes / ulaknode_node_memory_total_bytes",
+          "legendFormat": "available"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "/var/mail Free",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "min": 0 } },
+      "targets": [
+        {
+          "expr": "100 * ulaknode_node_filesystem_avail_bytes{mountpoint=\"/var/mail\"} / ulaknode_node_filesystem_size_bytes{mountpoint=\"/var/mail\"}",
+          "legendFormat": "free"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Mail Delivery Outcomes per Hour",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "suffix: /h", "min": 0 } },
+      "targets": [
+        { "expr": "rate(postfix_deliveries_total[1h]) * 3600", "legendFormat": "{{status}}" }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Postscreen Connections by Result per Hour",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "suffix: /h", "min": 0 } },
+      "targets": [
+        { "expr": "rate(postfix_postscreen_connections_total[1h]) * 3600", "legendFormat": "{{result}}" }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Authentication Failures per Hour",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "suffix: /h", "min": 0 } },
+      "targets": [
+        { "expr": "rate(postfix_sasl_auth_failures_total[1h]) * 3600", "legendFormat": "postfix sasl" },
+        { "expr": "rate(ulaknode_dovecot_login_failures_total[1h]) * 3600", "legendFormat": "dovecot" }
+      ]
+    },
+
+    {
+      "id": 11,
+      "type": "row",
+      "title": "Postfix / Postscreen",
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "panels": [
+        {
+          "id": 38,
+          "type": "stat",
+          "title": "Postscreen Connections",
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 14 },
+          "description": "Count over the selected time range.",
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+          "targets": [
+            { "expr": "increase(postfix_postscreen_connections_total{result=\"connected\"}[$__range])", "legendFormat": "count", "instant": true }
+          ]
+        },
+        {
+          "id": 39,
+          "type": "stat",
+          "title": "DNSBL Hits",
+          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 14 },
+          "description": "Count over the selected time range.",
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+          "targets": [
+            { "expr": "increase(postfix_postscreen_dnsbl_hits_total[$__range])", "legendFormat": "count", "instant": true }
+          ]
+        },
+        {
+          "id": 40,
+          "type": "stat",
+          "title": "SASL Auth Failures",
+          "gridPos": { "h": 4, "w": 6, "x": 12, "y": 14 },
+          "description": "Count over the selected time range.",
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+          "targets": [
+            { "expr": "increase(postfix_sasl_auth_failures_total[$__range])", "legendFormat": "count", "instant": true }
+          ]
+        },
+        {
+          "id": 41,
+          "type": "stat",
+          "title": "Delivery Attempts",
+          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 14 },
+          "description": "Count over the selected time range.",
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+          "targets": [
+            { "expr": "sum(increase(postfix_deliveries_total[$__range]))", "legendFormat": "count", "instant": true }
+          ]
+        },
+        {
+          "id": 12,
+          "type": "timeseries",
+          "title": "Postscreen Connections by Result per Hour",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+          "fieldConfig": { "defaults": { "unit": "suffix: /h", "min": 0 } },
+          "targets": [
+            { "expr": "rate(postfix_postscreen_connections_total[1h]) * 3600", "legendFormat": "{{result}}" }
+          ]
+        },
+        {
+          "id": 13,
+          "type": "timeseries",
+          "title": "Postscreen DNSBL Hits per Hour",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+          "fieldConfig": { "defaults": { "unit": "suffix: /h", "min": 0 } },
+          "targets": [
+            { "expr": "rate(postfix_postscreen_dnsbl_hits_total[1h]) * 3600", "legendFormat": "dnsbl" }
+          ]
+        },
+        {
+          "id": 14,
+          "type": "timeseries",
+          "title": "Postfix SASL Auth Failures per Hour",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 26 },
+          "fieldConfig": { "defaults": { "unit": "suffix: /h", "min": 0 } },
+          "targets": [
+            { "expr": "rate(postfix_sasl_auth_failures_total[1h]) * 3600", "legendFormat": "failures" }
+          ]
+        },
+        {
+          "id": 15,
+          "type": "timeseries",
+          "title": "Postfix Deliveries by Status per Hour",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 26 },
+          "fieldConfig": { "defaults": { "unit": "suffix: /h", "min": 0 } },
+          "targets": [
+            { "expr": "rate(postfix_deliveries_total[1h]) * 3600", "legendFormat": "{{status}}" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": 16,
+      "type": "row",
+      "title": "Dovecot",
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "panels": [
+        {
+          "id": 42,
+          "type": "stat",
+          "title": "Dovecot Logins",
+          "gridPos": { "h": 4, "w": 8, "x": 0, "y": 15 },
+          "description": "Count over the selected time range.",
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+          "targets": [
+            { "expr": "increase(ulaknode_dovecot_logins_total[$__range])", "legendFormat": "count", "instant": true }
+          ]
+        },
+        {
+          "id": 43,
+          "type": "stat",
+          "title": "Dovecot Login Failures",
+          "gridPos": { "h": 4, "w": 8, "x": 8, "y": 15 },
+          "description": "Count over the selected time range.",
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+          "targets": [
+            { "expr": "increase(ulaknode_dovecot_login_failures_total[$__range])", "legendFormat": "count", "instant": true }
+          ]
+        },
+        {
+          "id": 44,
+          "type": "stat",
+          "title": "Dovecot LMTP Deliveries",
+          "gridPos": { "h": 4, "w": 8, "x": 16, "y": 15 },
+          "description": "Count over the selected time range.",
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+          "targets": [
+            { "expr": "increase(ulaknode_dovecot_lmtp_deliveries_total[$__range])", "legendFormat": "count", "instant": true }
+          ]
+        },
+        {
+          "id": 17,
+          "type": "timeseries",
+          "title": "Dovecot Active Sessions",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 19 },
+          "targets": [
+            { "expr": "ulaknode_dovecot_active_sessions", "legendFormat": "active" }
+          ]
+        },
+        {
+          "id": 18,
+          "type": "timeseries",
+          "title": "Dovecot Logins per Hour",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 19 },
+          "fieldConfig": { "defaults": { "unit": "suffix: /h", "min": 0 } },
+          "targets": [
+            { "expr": "rate(ulaknode_dovecot_logins_total[1h]) * 3600", "legendFormat": "logins" }
+          ]
+        },
+        {
+          "id": 19,
+          "type": "timeseries",
+          "title": "Dovecot Login Failures per Hour",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
+          "fieldConfig": { "defaults": { "unit": "suffix: /h", "min": 0 } },
+          "targets": [
+            { "expr": "rate(ulaknode_dovecot_login_failures_total[1h]) * 3600", "legendFormat": "failures" }
+          ]
+        },
+        {
+          "id": 20,
+          "type": "timeseries",
+          "title": "Dovecot LMTP Deliveries per Hour",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
+          "fieldConfig": { "defaults": { "unit": "suffix: /h", "min": 0 } },
+          "targets": [
+            { "expr": "rate(ulaknode_dovecot_lmtp_deliveries_total[1h]) * 3600", "legendFormat": "deliveries" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": 29,
+      "type": "row",
+      "title": "Fail2ban",
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "panels": [
+        {
+          "id": 49,
+          "type": "stat",
+          "title": "Fail2ban Bans",
+          "gridPos": { "h": 4, "w": 12, "x": 0, "y": 19 },
+          "description": "Count over the selected time range.",
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+          "targets": [
+            { "expr": "increase(ulaknode_fail2ban_bans_total[$__range])", "legendFormat": "count", "instant": true }
+          ]
+        },
+        {
+          "id": 50,
+          "type": "stat",
+          "title": "Fail2ban SMTP Rejections",
+          "gridPos": { "h": 4, "w": 12, "x": 12, "y": 19 },
+          "description": "Count over the selected time range.",
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } } },
+          "targets": [
+            { "expr": "increase(ulaknode_fail2ban_rejections_total[$__range])", "legendFormat": "count", "instant": true }
+          ]
+        },
+        {
+          "id": 30,
+          "type": "timeseries",
+          "title": "Fail2ban Active Bans",
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 23 },
+          "targets": [
+            { "expr": "ulaknode_fail2ban_active_bans", "legendFormat": "active" }
+          ]
+        },
+        {
+          "id": 31,
+          "type": "timeseries",
+          "title": "Fail2ban Bans per Hour",
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 23 },
+          "fieldConfig": { "defaults": { "unit": "suffix: /h", "min": 0 } },
+          "targets": [
+            { "expr": "rate(ulaknode_fail2ban_bans_total[1h]) * 3600", "legendFormat": "bans" }
+          ]
+        },
+        {
+          "id": 32,
+          "type": "timeseries",
+          "title": "Fail2ban SMTP Rejections per Hour",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 23 },
+          "fieldConfig": { "defaults": { "unit": "suffix: /h", "min": 0 } },
+          "targets": [
+            { "expr": "rate(ulaknode_fail2ban_rejections_total[1h]) * 3600", "legendFormat": "rejections" }
+          ]
+        }
+      ]
+    },
+
+    {
+      "id": 33,
+      "type": "row",
+      "title": "Host",
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 19 },
+      "panels": [
+        {
+          "id": 51,
+          "type": "stat",
+          "title": "Network Receive Rate",
+          "description": "Average over the last 5 minutes. Excludes loopback and virtual/tunnel devices (docker*, wg*, veth*, br-*, tun*) to avoid double-counting traffic that also transits the physical interface.",
+          "gridPos": { "h": 4, "w": 12, "x": 0, "y": 20 },
+          "fieldConfig": { "defaults": { "unit": "Bps", "color": { "mode": "fixed", "fixedColor": "blue" } } },
+          "targets": [
+            { "expr": "sum(rate(ulaknode_node_network_receive_bytes_total{device!~\"lo|docker.*|wg.*|veth.*|br-.*|tun.*\"}[5m]))", "legendFormat": "received" }
+          ]
+        },
+        {
+          "id": 52,
+          "type": "stat",
+          "title": "Network Transmit Rate",
+          "description": "Average over the last 5 minutes. Excludes loopback and virtual/tunnel devices (docker*, wg*, veth*, br-*, tun*) to avoid double-counting traffic that also transits the physical interface.",
+          "gridPos": { "h": 4, "w": 12, "x": 12, "y": 20 },
+          "fieldConfig": { "defaults": { "unit": "Bps", "color": { "mode": "fixed", "fixedColor": "blue" } } },
+          "targets": [
+            { "expr": "sum(rate(ulaknode_node_network_transmit_bytes_total{device!~\"lo|docker.*|wg.*|veth.*|br-.*|tun.*\"}[5m]))", "legendFormat": "transmitted" }
+          ]
+        },
+        {
+          "id": 34,
+          "type": "timeseries",
+          "title": "Load Average",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+          "targets": [
+            { "expr": "ulaknode_node_load1", "legendFormat": "1m" },
+            { "expr": "ulaknode_node_load5", "legendFormat": "5m" },
+            { "expr": "ulaknode_node_load15", "legendFormat": "15m" }
+          ]
+        },
+        {
+          "id": 35,
+          "type": "timeseries",
+          "title": "Memory Usage",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+          "fieldConfig": { "defaults": { "unit": "bytes" } },
+          "targets": [
+            { "expr": "ulaknode_node_memory_total_bytes", "legendFormat": "total" },
+            { "expr": "ulaknode_node_memory_available_bytes", "legendFormat": "available" }
+          ]
+        },
+        {
+          "id": 36,
+          "type": "timeseries",
+          "title": "Disk Free % by Mountpoint",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+          "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "min": 0 } },
+          "targets": [
+            {
+              "expr": "100 * ulaknode_node_filesystem_avail_bytes / ulaknode_node_filesystem_size_bytes",
+              "legendFormat": "{{mountpoint}}"
+            }
+          ]
+        },
+        {
+          "id": 37,
+          "type": "timeseries",
+          "title": "Network Throughput",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+          "fieldConfig": { "defaults": { "unit": "Bps" } },
+          "targets": [
+            { "expr": "rate(ulaknode_node_network_receive_bytes_total[5m])", "legendFormat": "{{device}} rx" },
+            { "expr": "rate(ulaknode_node_network_transmit_bytes_total[5m])", "legendFormat": "{{device}} tx" }
+          ]
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  }
+}
